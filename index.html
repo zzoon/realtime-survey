@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=UTF-8" />
+	<title>Charting</title>
+	<link href="css/basic.css" type="text/css" rel="stylesheet" />
+</head>
+<body>
+
+	<table id="example">
+		<caption> 좋아하는 연예인 </caption>
+		<thead>
+			<tr>
+				<th scope="col"> 득표 </th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<th scope="row"> 김태희 </th>
+				<td>10</td>
+			</tr>
+			<tr>
+				<th scope="row"> 신민아 </th>
+				<td>17</td>
+			</tr>
+			<tr>
+				<th scope="row"> 이민정 </th>
+				<td>3</td>
+			</tr>
+			<tr>
+				<th scope="row"> 한가인 </th>
+				<td>5</td>
+			</tr>
+			<tr>
+				<th scope="row"> 한예슬 </th>
+				<td>20</td>
+			</tr>
+		</tbody>
+	</table>
+		<div align=center>
+		<button type="button" id="0"> 김태희  </button>
+		<button type="button" id="1"> 신민아  </button>
+		<button type="button" id="2"> 이민정  </button>
+		<button type="button" id="3"> 한가인  </button>
+		<button type="button" id="4"> 한예슬  </button>
+		</div>
+
+	<link href="css/visualize.css" type="text/css" rel="stylesheet" />
+	<link href="css/visualize-dark.css" type="text/css" rel="stylesheet" />
+
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+	<script type="text/javascript" src="js/visualize.jQuery.js"></script>
+	<script src="http://zzoon.just4fun.co.kr:10706/socket.io/socket.io.js"></script>
+
+	<script type="text/javascript">
+    $("#example").visualize({type: 'bar', width: '420px'}).trigger('visualizeRefresh');
+
+	var $opt_item;
+	var $opt_vote;
+
+	app_socket = io.connect('http://zzoon.just4fun.co.kr:10706');
+	app_socket.on('data-changed', function(data) {
+		console.log("data changed!");
+		console.log("index:" + data.index + " vote : " + data.vote);
+
+		$opt_arr[data.index].vote = data.vote;
+		$opt_arr[data.index].tr_item.innerText = data.vote;
+		$('.visualize').trigger('visualizeRefresh');
+	});
+
+	$opt_arr = new Array();
+	$opt = $('body').find('#example tbody tr');
+
+	$opt.each(function(i, item) {
+			$opt_item = $(item);
+			$opt_find = $opt_item.find('td')[0];
+			$opt_name = $opt_item.find('th')[0].innerText;
+			$opt_vote = $opt_item.find('td')[0].innerText;
+
+			console.log("Name : " + $opt_name);
+			console.log("votes : " + $opt_vote);
+
+			$opt_arr[i] = {
+				index: i,
+				tr_item: $opt_find,
+				vote: Number($opt_vote)
+			};
+		});
+
+
+		var click_handler = function(event) {
+			var clicked_id = event.currentTarget.id;
+			var vote_cnt = $opt_arr[clicked_id].vote;
+			console.log(clicked_id + " clicked");
+			console.log("vote : " + vote_cnt);
+
+			app_socket.emit('data-changed', { 
+				index: clicked_id, 
+				vote: vote_cnt
+			});
+
+			vote_cnt++;
+			$opt_arr[clicked_id].vote = vote_cnt;
+			$opt_arr[clicked_id].tr_item.innerText = vote_cnt;
+			$('.visualize').trigger('visualizeRefresh');
+		};
+
+		$('button').click(click_handler);
+	</script>
+
+</body>
+</html>
